@@ -131,6 +131,26 @@ class BirdfyCoordinator(DataUpdateCoordinator):
                 return data.get("url", "")
         return ""
 
+    async def fetch_fresh_record_url(self, alarm_id: str) -> str:
+        """Fetch a fresh (non-expired) record URL for a given alarm_id."""
+        url = f"{API_BASE}/devices/{self._device_id}/events/{alarm_id}"
+        async with aiohttp.ClientSession() as session:
+            await self._ensure_login(session)
+            await self._ensure_device(session)
+            async with session.get(url, headers=_auth_headers(self._token, self._userid, self._ucid, self._udid)) as r:
+                if r.status != 200:
+                    return ""
+                data = await r.json(content_type=None)
+        ev = data.get("event", data)
+        try:
+            desc = json.loads(ev.get("description", "{}"))
+            record_url = desc.get("recordUrl", "")
+        except Exception:
+            record_url = ""
+        if record_url:
+            self.record_url_cache[alarm_id] = record_url
+        return record_url
+
     async def fetch_events_for_day(self, date_str: str) -> list:
         """Fetch up to 100 events for a given day (YYYY-MM-DD, local time)."""
         import datetime
