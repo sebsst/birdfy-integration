@@ -1,4 +1,5 @@
 {
   "name": "Birdfy Recordings",
-  "render_readme": true
+  "render_readme": true,
+  "filename": "birdfy"
 }
