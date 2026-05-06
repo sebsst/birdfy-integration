@@ -53,9 +53,15 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
         except Exception as e:
             return web.Response(status=502, text=str(e))
 
+        # Netvue sometimes returns all tags space-separated on one line — normalize to one per line
+        content = content.replace(" #", "\n#")
+
         # Fix durations: Netvue uses milliseconds, HLS spec requires seconds
         lines = []
         for line in content.splitlines():
+            line = line.strip()
+            if not line:
+                continue
             if line.startswith("#EXTINF:"):
                 try:
                     dur_ms = float(line.split(":")[1].rstrip(","))
