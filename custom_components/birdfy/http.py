@@ -1,12 +1,16 @@
 """HTTP proxy views for Birdfy HLS streams."""
 from __future__ import annotations
 
+import logging
+
 import aiohttp
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def register_views(hass: HomeAssistant) -> None:
@@ -87,8 +91,6 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
             lines.insert(1, "#EXT-X-INDEPENDENT-SEGMENTS")
 
         result = "\n".join(lines)
-        import logging
-        logging.getLogger(__name__).error("M3U8 alarm=%s output=%s", alarm_id, result)
 
         return web.Response(
             text=result,
