@@ -48,6 +48,8 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
                     if r.status != 200:
                         return web.Response(status=r.status, text="Upstream error")
                     content = await r.text()
+                    import logging
+                    logging.getLogger(__name__).error("M3U8 alarm=%s status=%s content=%s", alarm_id, r.status, content[:800])
         except Exception as e:
             return web.Response(status=502, text=str(e))
 
