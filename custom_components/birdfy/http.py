@@ -82,6 +82,10 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
         if not has_endlist:
             lines.append("#EXT-X-ENDLIST")
 
+        # Insert after #EXTM3U if not already present
+        if lines and lines[0] == "#EXTM3U" and "#EXT-X-INDEPENDENT-SEGMENTS" not in lines:
+            lines.insert(1, "#EXT-X-INDEPENDENT-SEGMENTS")
+
         result = "\n".join(lines)
         import logging
         logging.getLogger(__name__).error("M3U8 alarm=%s output=%s", alarm_id, result)
