@@ -51,14 +51,14 @@ class BirdfyMediaSource(MediaSource):
             if ev["alarm_id"] == alarm_id:
                 return PlayMedia(
                     url=f"/api/birdfy/m3u8/{alarm_id}",
-                    mime_type="application/vnd.apple.mpegurl",
+                    mime_type="video/mp4",
                 )
 
         # Not in cache — still serve the proxy URL (http.py will fetch it)
         if alarm_id:
             return PlayMedia(
                 url=f"/api/birdfy/m3u8/{alarm_id}",
-                mime_type="application/vnd.apple.mpegurl",
+                mime_type="video/mp4",
             )
         raise Unresolvable(f"Event {alarm_id} not found")
 
