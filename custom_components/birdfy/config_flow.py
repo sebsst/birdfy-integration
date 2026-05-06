@@ -15,23 +15,24 @@ _LOGGER = logging.getLogger(__name__)
 
 LOGIN_URL = "https://localweb.nvts.co/v1/users/login/v2"
 
+UCID = "b3cf543b57"
+UDID = "android-10aa8cf1-d060-4333-b738-f541f07b65ae"
+
 STEP_SCHEMA = vol.Schema({
     vol.Required(CONF_EMAIL): str,
     vol.Required(CONF_PASSWORD): str,
-    vol.Required("ucid"): str,
-    vol.Required("udid"): str,
 })
 
 
-async def _test_login(email: str, password: str, ucid: str, udid: str) -> str | None:
+async def _test_login(email: str, password: str) -> str | None:
     """Return error key or None on success."""
     pwd_md5 = hashlib.md5(password.encode()).hexdigest()
     payload = {"username": email, "password": pwd_md5, "locale": "en-US"}
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "x-nvs-ucid": ucid,
-        "x-nvs-udid": udid,
+        "x-nvs-ucid": UCID,
+        "x-nvs-udid": UDID,
         "User-Agent": "Birdfy/1.19.2 (build 123960) NetvueSDK/1.6.1 Android/12",
     }
     try:
@@ -56,9 +57,7 @@ class BirdfyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
-            ucid = user_input["ucid"].strip()
-            udid = user_input["udid"].strip()
-            error = await _test_login(user_input[CONF_EMAIL], user_input[CONF_PASSWORD], ucid, udid)
+            error = await _test_login(user_input[CONF_EMAIL], user_input[CONF_PASSWORD])
             if error:
                 errors["base"] = error
             else:
@@ -69,8 +68,8 @@ class BirdfyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_EMAIL: user_input[CONF_EMAIL],
                         CONF_PASSWORD: user_input[CONF_PASSWORD],
-                        "ucid": ucid,
-                        "udid": udid,
+                        "ucid": UCID,
+                        "udid": UDID,
                     },
                 )
 

@@ -3,17 +3,15 @@
     "step": {
       "user": {
         "title": "Birdfy",
-        "description": "Enter your Netvue/Birdfy account credentials and device identifiers captured from the Android app (Settings > About in HTTP Toolkit).",
+        "description": "Enter your Netvue/Birdfy account credentials.",
         "data": {
           "email": "Email",
-          "password": "Password",
-          "ucid": "UCID (x-nvs-ucid from Android app)",
-          "udid": "UDID (x-nvs-udid from Android app)"
+          "password": "Password"
         }
       }
     },
     "error": {
-      "invalid_auth": "Invalid credentials or client identifiers rejected by Netvue API.",
+      "invalid_auth": "Invalid email or password.",
       "cannot_connect": "Cannot connect to Birdfy API. Check your internet connection."
     },
     "abort": {

@@ -16,14 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(minutes=5)
 
-def _generate_ucid() -> str:
-    import random
-    return "".join(random.choices("0123456789abcdef", k=10))
-
-def _generate_udid() -> str:
-    import uuid
-    return f"android-{uuid.uuid4()}"
-
 API_BASE  = "https://eu-central-1-api2.nvts.co"
 LOGIN_URL = "https://localweb.nvts.co/v1/users/login/v2"
 
@@ -99,8 +91,8 @@ class BirdfyCoordinator(DataUpdateCoordinator):
         super().__init__(hass, _LOGGER, name="birdfy", update_interval=SCAN_INTERVAL)
         self._email    = email
         self._password = password
-        self._ucid     = ucid or _generate_ucid()
-        self._udid     = udid or _generate_udid()
+        self._ucid     = ucid
+        self._udid     = udid
         self._token    = ""
         self._userid   = ""
         self._device_id = ""
