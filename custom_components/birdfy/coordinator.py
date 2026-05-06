@@ -138,9 +138,13 @@ class BirdfyCoordinator(DataUpdateCoordinator):
             await self._ensure_login(session)
             await self._ensure_device(session)
             async with session.get(url, headers=_auth_headers(self._token, self._userid, self._ucid, self._udid)) as r:
+                _LOGGER.error("fetch_fresh_record_url status=%s url=%s", r.status, url)
                 if r.status != 200:
-                    return ""
+                    cached = self.record_url_cache.get(alarm_id, "")
+                    _LOGGER.error("fetch_fresh_record_url falling back to cache: %s", cached)
+                    return cached
                 data = await r.json(content_type=None)
+                _LOGGER.error("fetch_fresh_record_url response: %s", str(data)[:500])
         ev = data.get("event", data)
         try:
             desc = json.loads(ev.get("description", "{}"))
