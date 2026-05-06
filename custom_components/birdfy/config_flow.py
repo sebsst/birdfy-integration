@@ -28,7 +28,7 @@ def _generate_ucid() -> str:
 
 
 def _generate_udid() -> str:
-    return f"android-{uuid.uuid4()}"
+    return f"web-{uuid.uuid4()}"
 
 
 async def _test_login(email: str, password: str, ucid: str, udid: str) -> str | None:

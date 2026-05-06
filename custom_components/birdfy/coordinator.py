@@ -22,7 +22,7 @@ def _generate_ucid() -> str:
 
 def _generate_udid() -> str:
     import uuid
-    return f"android-{uuid.uuid4()}"
+    return f"web-{uuid.uuid4()}"
 
 API_BASE  = "https://eu-central-1-api2.nvts.co"
 LOGIN_URL = "https://localweb.nvts.co/v1/users/login/v2"
