@@ -52,8 +52,18 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
         except Exception as e:
             return web.Response(status=502, text=str(e))
 
-        # Keep .ts segment URLs as-is (S3 signed URLs are publicly accessible)
-        lines = content.splitlines()
+        # Fix #EXTINF durations: Netvue uses milliseconds, HLS spec requires seconds
+        lines = []
+        for line in content.splitlines():
+            if line.startswith("#EXTINF:"):
+                try:
+                    dur_str = line.split(":")[1].rstrip(",")
+                    dur_ms = float(dur_str)
+                    if dur_ms > 1000:
+                        line = f"#EXTINF:{dur_ms / 1000:.3f},"
+                except Exception:
+                    pass
+            lines.append(line)
 
         return web.Response(
             text="\n".join(lines),

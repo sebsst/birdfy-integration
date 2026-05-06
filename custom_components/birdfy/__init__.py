@@ -17,6 +17,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass,
         email=entry.data.get(CONF_EMAIL) or entry.data.get("email", ""),
         password=entry.data.get(CONF_PASSWORD) or entry.data.get("password", ""),
+        ucid=entry.data.get("ucid", ""),
+        udid=entry.data.get("udid", ""),
     )
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
