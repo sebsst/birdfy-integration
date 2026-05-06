@@ -32,8 +32,13 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
         if coordinator is None:
             return web.Response(status=503, text="Birdfy not ready")
 
-        # Always fetch a fresh URL — cached ones expire after ~1h
-        record_url = await coordinator.fetch_fresh_record_url(alarm_id)
+        record_url = coordinator.record_url_cache.get(alarm_id)
+        if not record_url and coordinator.data:
+            for ev in coordinator.data.get("recent_events", []):
+                if ev["alarm_id"] == alarm_id:
+                    record_url = ev["record_url"]
+                    break
+
         if not record_url:
             return web.Response(status=404, text="Event not found")
 
