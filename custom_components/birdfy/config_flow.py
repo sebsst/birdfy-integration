@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import hashlib
 import logging
-import random
-import uuid
 
 import aiohttp
 import voluptuous as vol
@@ -18,17 +16,11 @@ _LOGGER = logging.getLogger(__name__)
 LOGIN_URL = "https://localweb.nvts.co/v1/users/login/v2"
 
 STEP_SCHEMA = vol.Schema({
-    vol.Required(CONF_EMAIL):    str,
+    vol.Required(CONF_EMAIL): str,
     vol.Required(CONF_PASSWORD): str,
+    vol.Required("ucid"): str,
+    vol.Required("udid"): str,
 })
-
-
-def _generate_ucid() -> str:
-    return "".join(random.choices("0123456789abcdef", k=10))
-
-
-def _generate_udid() -> str:
-    return f"web-{uuid.uuid4()}"
 
 
 async def _test_login(email: str, password: str, ucid: str, udid: str) -> str | None:
@@ -46,8 +38,9 @@ async def _test_login(email: str, password: str, ucid: str, udid: str) -> str | 
         async with aiohttp.ClientSession() as s:
             async with s.post(LOGIN_URL, json=payload, headers=headers) as r:
                 data = await r.json(content_type=None)
-                _LOGGER.error("Birdfy login response: %s", data)
+                _LOGGER.debug("Birdfy login response: %s", data)
                 if data.get("ret", 0) != 0 or not data.get("token"):
+                    _LOGGER.error("Birdfy login failed: %s", data)
                     return "invalid_auth"
     except Exception as e:
         _LOGGER.error("Birdfy login exception: %s", e)
@@ -63,8 +56,8 @@ class BirdfyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
-            ucid = _generate_ucid()
-            udid = _generate_udid()
+            ucid = user_input["ucid"].strip()
+            udid = user_input["udid"].strip()
             error = await _test_login(user_input[CONF_EMAIL], user_input[CONF_PASSWORD], ucid, udid)
             if error:
                 errors["base"] = error
@@ -74,7 +67,8 @@ class BirdfyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_create_entry(
                     title=user_input[CONF_EMAIL],
                     data={
-                        **user_input,
+                        CONF_EMAIL: user_input[CONF_EMAIL],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
                         "ucid": ucid,
                         "udid": udid,
                     },
