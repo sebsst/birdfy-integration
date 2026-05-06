@@ -53,15 +53,21 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
         except Exception as e:
             return web.Response(status=502, text=str(e))
 
-        # Fix #EXTINF durations: Netvue uses milliseconds, HLS spec requires seconds
+        # Fix durations: Netvue uses milliseconds, HLS spec requires seconds
         lines = []
         for line in content.splitlines():
             if line.startswith("#EXTINF:"):
                 try:
-                    dur_str = line.split(":")[1].rstrip(",")
-                    dur_ms = float(dur_str)
+                    dur_ms = float(line.split(":")[1].rstrip(","))
                     if dur_ms > 1000:
                         line = f"#EXTINF:{dur_ms / 1000:.3f},"
+                except Exception:
+                    pass
+            elif line.startswith("#EXT-X-TARGETDURATION:"):
+                try:
+                    val = float(line.split(":")[1])
+                    if val > 1000:
+                        line = f"#EXT-X-TARGETDURATION:{int(val / 1000) + 1}"
                 except Exception:
                     pass
             lines.append(line)
