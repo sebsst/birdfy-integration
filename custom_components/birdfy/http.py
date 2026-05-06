@@ -48,16 +48,15 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
                     if r.status != 200:
                         return web.Response(status=r.status, text="Upstream error")
                     content = await r.text()
-                    import logging
-                    logging.getLogger(__name__).error("M3U8 alarm=%s status=%s content=%s", alarm_id, r.status, content[:800])
         except Exception as e:
             return web.Response(status=502, text=str(e))
 
-        # Netvue sometimes returns all tags space-separated on one line — normalize to one per line
+        # Netvue returns all tags space-separated on one line — normalize to one per line
         content = content.replace(" #", "\n#")
 
         # Fix durations: Netvue uses milliseconds, HLS spec requires seconds
         lines = []
+        has_endlist = False
         for line in content.splitlines():
             line = line.strip()
             if not line:
@@ -76,10 +75,19 @@ class BirdfyM3U8ProxyView(HomeAssistantView):
                         line = f"#EXT-X-TARGETDURATION:{int(val / 1000) + 1}"
                 except Exception:
                     pass
+            elif line == "#EXT-X-ENDLIST":
+                has_endlist = True
             lines.append(line)
 
+        if not has_endlist:
+            lines.append("#EXT-X-ENDLIST")
+
+        result = "\n".join(lines)
+        import logging
+        logging.getLogger(__name__).error("M3U8 alarm=%s output=%s", alarm_id, result)
+
         return web.Response(
-            text="\n".join(lines),
+            text=result,
             content_type="application/vnd.apple.mpegurl",
             headers={"Access-Control-Allow-Origin": "*"},
         )
