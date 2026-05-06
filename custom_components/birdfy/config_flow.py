@@ -46,9 +46,11 @@ async def _test_login(email: str, password: str, ucid: str, udid: str) -> str | 
         async with aiohttp.ClientSession() as s:
             async with s.post(LOGIN_URL, json=payload, headers=headers) as r:
                 data = await r.json(content_type=None)
+                _LOGGER.error("Birdfy login response: %s", data)
                 if data.get("ret", 0) != 0 or not data.get("token"):
                     return "invalid_auth"
-    except Exception:
+    except Exception as e:
+        _LOGGER.error("Birdfy login exception: %s", e)
         return "cannot_connect"
     return None
 
