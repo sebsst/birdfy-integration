@@ -48,6 +48,7 @@ class BirdfyLastEventSensor(CoordinatorEntity[BirdfyCoordinator], SensorEntity):
             ) if alert_time else None,
             "record_url":    last.get("record_url"),
             "image_url":     self.coordinator.image_url,
+            "highlights_url": self.coordinator.highlights_url,
             "device_id":     data.get("device_id"),
             "recent_events": data.get("recent_events", []),
         }

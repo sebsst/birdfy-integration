@@ -97,6 +97,7 @@ class BirdfyCoordinator(DataUpdateCoordinator):
         self._userid   = ""
         self._device_id = ""
         self.image_url  = ""
+        self.highlights_url = ""
         self.record_url_cache: dict[str, str] = {}
 
     async def _ensure_login(self, session: aiohttp.ClientSession) -> None:
@@ -226,6 +227,17 @@ class BirdfyCoordinator(DataUpdateCoordinator):
                     self.image_url = await self._fetch_image_url(session, last["alarm_id"])
                 except Exception:
                     pass
+
+            try:
+                async with session.get(
+                    "https://api2.nvts.co/users/dynamicSetting",
+                    headers=_auth_headers(self._token, self._userid, self._ucid, self._udid),
+                ) as r:
+                    if r.status == 200:
+                        ds = await r.json(content_type=None)
+                        self.highlights_url = ds.get("highlightsUrl", "")
+            except Exception:
+                pass
 
             return {
                 "last_event":    last,
