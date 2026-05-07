@@ -1,7 +1,7 @@
 {
   "domain": "birdfy",
   "name": "Birdfy",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "documentation": "https://github.com/sebsst/birdfy-integration",
   "issue_tracker": "https://github.com/sebsst/birdfy-integration/issues",
   "requirements": ["aiohttp>=3.8.0"],

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import uuid
 
 import aiohttp
 import voluptuous as vol
@@ -16,7 +17,6 @@ _LOGGER = logging.getLogger(__name__)
 LOGIN_URL = "https://localweb.nvts.co/v1/users/login/v2"
 
 UCID = "b3cf543b57"
-UDID = "android-10aa8cf1-d060-4333-b738-f541f07b65ae"
 
 STEP_SCHEMA = vol.Schema({
     vol.Required(CONF_EMAIL): str,
@@ -24,7 +24,11 @@ STEP_SCHEMA = vol.Schema({
 })
 
 
-async def _test_login(email: str, password: str) -> str | None:
+def _generate_udid() -> str:
+    return f"android-{uuid.uuid4()}"
+
+
+async def _test_login(email: str, password: str, udid: str) -> str | None:
     """Return error key or None on success."""
     pwd_md5 = hashlib.md5(password.encode()).hexdigest()
     payload = {"username": email, "password": pwd_md5, "locale": "en-US"}
@@ -32,7 +36,7 @@ async def _test_login(email: str, password: str) -> str | None:
         "Accept": "application/json",
         "Content-Type": "application/json",
         "x-nvs-ucid": UCID,
-        "x-nvs-udid": UDID,
+        "x-nvs-udid": udid,
         "User-Agent": "Birdfy/1.19.2 (build 123960) NetvueSDK/1.6.1 Android/12",
     }
     try:
@@ -57,7 +61,8 @@ class BirdfyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
-            error = await _test_login(user_input[CONF_EMAIL], user_input[CONF_PASSWORD])
+            udid = _generate_udid()
+            error = await _test_login(user_input[CONF_EMAIL], user_input[CONF_PASSWORD], udid)
             if error:
                 errors["base"] = error
             else:
@@ -69,7 +74,7 @@ class BirdfyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_EMAIL: user_input[CONF_EMAIL],
                         CONF_PASSWORD: user_input[CONF_PASSWORD],
                         "ucid": UCID,
-                        "udid": UDID,
+                        "udid": udid,
                     },
                 )
 
