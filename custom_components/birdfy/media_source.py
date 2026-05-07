@@ -121,21 +121,24 @@ class BirdfyMediaSource(MediaSource):
 
         children = []
         for ev in events:
-            if not ev.get("record_url"):
+            if not ev.get("record_url") and not coordinator.segments_cache.get(ev.get("alarm_id")):
                 continue
+            alarm_id = ev["alarm_id"]
             alert_time = ev.get("alert_time", 0)
             ts = time.strftime("%H:%M:%S", time.localtime(alert_time / 1000)) if alert_time else "?"
             label = ev.get("label", "unknown")
             title = f"{ts} — {label}"
+            thumbnail = coordinator.thumbnail_cache.get(alarm_id) if coordinator else None
             children.append(
                 BrowseMediaSource(
                     domain=DOMAIN,
-                    identifier=ev["alarm_id"],
+                    identifier=alarm_id,
                     media_class=MediaClass.VIDEO,
                     media_content_type="video/mp4",
                     title=title,
                     can_play=True,
                     can_expand=False,
+                    thumbnail=thumbnail,
                 )
             )
 

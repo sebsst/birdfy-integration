@@ -70,9 +70,12 @@ async def _android_login(session: aiohttp.ClientSession, email: str, password: s
 
 def _parse_event(ev: dict) -> dict:
     record_url = ""
+    record_dir = ""
+    pic = ev.get("pic", "")
     try:
         desc = json.loads(ev.get("description", "{}"))
         record_url = desc.get("recordUrl", "")
+        record_dir = desc.get("recordDir", "")
     except Exception:
         pass
     return {
@@ -80,6 +83,8 @@ def _parse_event(ev: dict) -> dict:
         "alert_time": ev.get("alertTime", 0),
         "label":      ev.get("label", "unknown"),
         "record_url": record_url,
+        "record_dir": record_dir,
+        "pic":        pic,
     }
 
 
@@ -99,6 +104,8 @@ class BirdfyCoordinator(DataUpdateCoordinator):
         self.image_url  = ""
         self.highlights_url = ""
         self.record_url_cache: dict[str, str] = {}
+        self.segments_cache: dict[str, list[str]] = {}
+        self.thumbnail_cache: dict[str, str] = {}
 
     async def _ensure_login(self, session: aiohttp.ClientSession) -> None:
         if self._token:
@@ -131,6 +138,52 @@ class BirdfyCoordinator(DataUpdateCoordinator):
                 data = await r.json(content_type=None)
                 return data.get("url", "")
         return ""
+
+    async def fetch_download_links(self, session: aiohttp.ClientSession, events: list) -> None:
+        """Call downloadLink API and populate segments_cache and thumbnail_cache."""
+        if not events:
+            return
+        event_list = []
+        for ev in events:
+            if not ev.get("alarm_id"):
+                continue
+            entry: dict = {
+                "serialnumber": self._device_id,
+                "alarmId": ev["alarm_id"],
+                "dataGroup": ["video", "pic"],
+                "type": 56,
+            }
+            if ev.get("record_dir"):
+                entry["recordDir"] = ev["record_dir"]
+            if ev.get("pic"):
+                entry["pic"] = ev["pic"]
+            event_list.append(entry)
+
+        if not event_list:
+            return
+
+        try:
+            async with session.post(
+                "https://localapi2.nvts.co/event/downloadLink",
+                json={"eventList": event_list},
+                headers=_auth_headers(self._token, self._userid, self._ucid, self._udid),
+            ) as r:
+                if r.status != 200:
+                    return
+                data = await r.json(content_type=None)
+        except Exception:
+            return
+
+        for item in data.get("eventList", []):
+            alarm_id = item.get("alarmId", "")
+            if not alarm_id:
+                continue
+            segments = item.get("videoFileList", [])
+            if segments:
+                self.segments_cache[alarm_id] = segments
+            pics = item.get("picList", [])
+            if pics:
+                self.thumbnail_cache[alarm_id] = pics[0]
 
     async def fetch_fresh_record_url(self, alarm_id: str) -> str:
         """Fetch a fresh (non-expired) record URL for a given alarm_id."""
@@ -176,10 +229,11 @@ class BirdfyCoordinator(DataUpdateCoordinator):
                     self._token = ""
                     return []
                 raw = await r.json(content_type=None)
-        events = [_parse_event(e) for e in raw.get("events", [])]
-        for ev in events:
-            if ev.get("alarm_id") and ev.get("record_url"):
-                self.record_url_cache[ev["alarm_id"]] = ev["record_url"]
+            events = [_parse_event(e) for e in raw.get("events", [])]
+            for ev in events:
+                if ev.get("alarm_id") and ev.get("record_url"):
+                    self.record_url_cache[ev["alarm_id"]] = ev["record_url"]
+            await self.fetch_download_links(session, events)
         return events
 
     async def _async_update_data(self) -> dict:
